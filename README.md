@@ -4,7 +4,7 @@ Reproducible R analysis code for the manuscript:
 **"Climate Sensitivity of Norovirus in Korea, 2005–2024: Post-COVID-19 Temperature Amplification and an Event-Based Heatwave Alert"** (submitted to the *International Journal of Hygiene and Environmental Health*).
 
 ## Contents
-- `norovirus_climate_gam_full.R` — full pipeline:
+- `norovirus_climate_gam.R` — full pipeline:
   data loading → preprocessing (ISO-week aggregation, 0–8 wk lags, p99 winsorization) →
   negative-binomial GAMM (Set 2 LONG) → Watson U² circular test (+ amplitude-free
   sensitivity: unweighted, year-unit permutation, placebo boundary) →
@@ -27,3 +27,6 @@ splines, readxl, dplyr, ggplot2, patchwork, scales, lubridate, tidyr, segmented,
 
 ## Citation
 Kim S, Chun BC. Climate Sensitivity of Norovirus in Korea, 2005–2024 (manuscript under review). Citation to be updated on publication.
+
+## Reproducibility
+The script runs end-to-end (R ≥ 4.5; ~5 min) and reproduces the manuscript headline numbers: Period×Climate ΔAIC −140.1/−129.4/−135.1; AR(1) ρ≈0.03; case-weighted Watson U²=18.32 vs amplitude-free year-unit permutation p=0.66; heatwave IRRs (Holm/BH + permutation); DLNM Post-era temperature +41% at lag 4; ZINB block-bootstrap β stability.
