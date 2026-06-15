@@ -30,6 +30,7 @@
 #    [7] DLNM cumulative-lag ........ Table 3 panel C; Supp S2; Supp S6 (abs. humidity)
 #    [8] ZINB block bootstrap ....... β stability (Methods)
 #    [9] Figure 2 composite ......... Figure 2 (a weekly / b year-COM / c temp–response)
+#    [10] Trend/climate sensitivity .. Supplementary Table S11 (heatwave + DLNM robustness)
 #  Headline numbers reproduced: Watson U²=18.32 (case-weighted) vs year-unit
 #  permutation p≈0.66; heatwave IRRs (2.3–4.8); DLNM Post temp +41% at lag 4.
 # =============================================================================
@@ -203,16 +204,16 @@ heat_event <- function(temp, thr){ h<-as.integer(temp>thr); r<-rle(h==1); ev<-re
   for(i in seq_along(r$lengths)){ if(r$values[i]&&r$lengths[i]>=2) ev[pos:(pos+r$lengths[i]-1)]<-1L; pos<-pos+r$lengths[i] }; ev }
 dh <- SUB$Overall; ktH <- min(20, max(4, floor(nrow(dh)/15)))
 fit_heat <- function(ev){ dh$ev<-ev
-  m<-tryCatch(glm.nb(cases~ev+sin52+cos52+sin26+cos26+ns(time_idx,df=ktH),data=dh),error=function(e)NULL)
+  m<-tryCatch(glm.nb(cases~ev+sin52+cos52+sin26+cos26+time_idx,data=dh),error=function(e)NULL)  # linear time = manuscript heatwave spec
   if(is.null(m)||!"ev"%in%rownames(summary(m)$coef)) return(c(b=NA,irr=NA,lo=NA,hi=NA,p=NA))
   s<-summary(m)$coef["ev",]; c(b=unname(s[1]),irr=unname(exp(s[1])),
     lo=unname(exp(s[1]-1.96*s[2])),hi=unname(exp(s[1]+1.96*s[2])),p=unname(s[4])) }
-hw <- do.call(rbind, lapply(HEAT_GRID, function(thr){ ev<-heat_event(dh$avg_temp_lag3,thr)
+hw <- do.call(rbind, lapply(HEAT_GRID, function(thr){ ev<-heat_event(dh$avg_temp,thr)
   r<-fit_heat(ev); data.frame(threshold=thr,n_event_wk=sum(ev),IRR=round(r["irr"],3),
     CI=sprintf("[%.2f, %.2f]",r["lo"],r["hi"]),p_raw=signif(r["p"],3),b=r["b"]) }))
 hw$p_Holm <- signif(p.adjust(hw$p_raw,"holm"),3); hw$p_BH <- signif(p.adjust(hw$p_raw,"BH"),3)
 hw$p_perm <- NA
-for (thr in c(27,28)) { ev<-heat_event(dh$avg_temp_lag3,thr); ob<-fit_heat(ev)["b"]
+for (thr in c(27,28)) { ev<-heat_event(dh$avg_temp,thr); ob<-fit_heat(ev)["b"]
   if(!is.na(ob)){ cnt<-sum(replicate(B_PERM, { bb<-fit_heat(sample(ev))["b"]; !is.na(bb)&&abs(bb)>=abs(ob) }))
     hw$p_perm[hw$threshold==thr]<-signif((cnt+1)/(B_PERM+1),3) } }
 print(hw[,c("threshold","n_event_wk","IRR","CI","p_raw","p_Holm","p_BH","p_perm")], row.names=FALSE)
@@ -293,6 +294,35 @@ pc<-ggplot(nd,aes(avg_temp_lag3,fit,color=era,fill=era))+geom_ribbon(aes(ymin=lo
   labs(title="(c) Temperature exposure-response by era",x="Mean temp lag-3 (°C)",y="Log relative rate",color=NULL,fill=NULL)+
   theme_minimal(base_size=10)+theme(legend.position=c(.3,.86))
 ggsave("Figure2.png", pa+pb+pc+plot_layout(nrow=1), width=12, height=5, dpi=300)
+
+## ---- [10] Trend & climate sensitivity → Supplementary Table S11 -------------
+cat("\n[10] Sensitivity to time-trend specification (Supplementary Table S11)\n")
+hw_sens <- function(thr, timeterm, clim=FALSE){
+  dh$ev <- heat_event(dh$avg_temp, thr)
+  rhs <- paste("ev + sin52+cos52+sin26+cos26 +", timeterm)
+  if (clim) rhs <- paste(rhs, "+ s(humidity_lag7,k=6)+s(pm10_lag8,k=6)+s(precipitation_lag7,k=6)")
+  m <- tryCatch(gam(as.formula(paste("cases ~", rhs)), family=nb(), data=dh, method="REML"), error=function(e) NULL)
+  if (is.null(m)) return(NA)
+  s <- summary(m)$p.table; if(!"ev" %in% rownames(s)) return(NA); round(exp(s["ev",1]), 2)
+}
+cat("  Heatwave IRR  | linear  spline  spline+climate\n")
+for (thr in HEAT_GRID)
+  cat(sprintf("   >=%.1f C    | %5.2f  %5.2f  %5.2f\n", thr,
+      hw_sens(thr,"time_idx"), hw_sens(thr,"s(time_idx,k=30)"), hw_sens(thr,"s(time_idx,k=30)",TRUE)))
+dlnm_sens <- function(d, timeterm){
+  cb <- crossbasis(d$avg_temp, lag=c(0,8), argvar=list(fun="lin"), arglag=list(fun="integer"))
+  rhs <- paste("cb + sin52+cos52+sin26+cos26 + s(humidity_lag7,k=6)+s(pm10_lag8,k=6)+s(precipitation_lag7,k=6) +", timeterm)
+  m <- tryCatch(gam(as.formula(paste("cases ~", rhs)), family=nb(), data=d, method="REML"), error=function(e) NULL)
+  if (is.null(m)) return(c(NA,NA,NA))
+  cp <- tryCatch(crosspred(cb, m, at=1, cen=0, cumul=TRUE), error=function(e) NULL); if(is.null(cp)) return(c(NA,NA,NA))
+  c((cp$cumRRfit[1,5]-1)*100, (cp$cumRRlow[1,5]-1)*100, (cp$cumRRhigh[1,5]-1)*100)
+}
+lin <- dlnm_cum(SUB$Post, "avg_temp", c("humidity_lag7","pm10_lag8","precipitation_lag7"), 4)  # glm.nb (= main, [7])
+spl <- dlnm_sens(SUB$Post, "s(time_idx,k=30)")                                                 # gam, penalized-spline trend
+cat(sprintf("  DLNM Post temp cum-lag4: main (linear time) %+.1f%% [%.1f, %.1f] | penalized-spline time %+.1f%% [%.1f, %.1f]\n",
+    lin[1],lin[2],lin[3], spl[1],spl[2],spl[3]))
+cat("  => heatwave IRRs broadly preserved under a penalized-spline trend but attenuated by climate adjustment;\n")
+cat("     DLNM Post-era temperature point estimate is stable (~+40%) but its significance is not robust to the trend.\n")
 
 cat("\nDone. Outputs: console tables above + Figure2.png\n")
 cat("R/session:", R.version.string, "\n")
