@@ -25,14 +25,14 @@
 #    [2] Descriptives ............. Table 1, Table 2
 #    [3] NB-GAMM + diagnostics ..... model fit; Ljung–Box (Methods)
 #    [4] Period × Climate ΔAIC ..... Supplementary Table S1
-#    [5] Watson U² + amplitude-free  Table 3 panel A; Supp S3, S7, S9, S10
-#    [6] Heatwave dose–response ..... Table 3 panel B; Supp S8 (Holm/BH + perm)
-#    [7] DLNM cumulative-lag ........ Table 3 panel C; Supp S2; Supp S6 (abs. humidity)
+#    [5] Watson U² + amplitude-free  Table 3 panel A; Supp S3, S5, S7, S8
+#    [6] Heatwave dose–response ..... Table 3 panel B; Supp S6 (Holm/BH + perm)
+#    [7] DLNM cumulative-lag ........ Table 3 panel C; Supp S2; Supp S4 (abs. humidity)
 #    [8] ZINB block bootstrap ....... β stability (Methods)
 #    [9] Figure 2 composite ......... Figure 2 (a weekly / b year-COM / c temp–response)
-#    [10] Trend/climate sensitivity .. Supplementary Table S11 (heatwave + DLNM robustness)
+#    [10] Trend/climate sensitivity .. Supplementary Table S9 (heatwave + DLNM robustness)
 #  Headline numbers reproduced: Watson U²=18.32 (case-weighted) vs year-unit
-#  permutation p≈0.66; heatwave IRRs (2.3–4.8); DLNM Post temp +41% at lag 4.
+#  permutation p≈0.66; heatwave IRRs 2.48 (≥24 °C) to 8.24 (≥28 °C); DLNM Post temp +41% at lag 4.
 # =============================================================================
 
 ## ---- [0] Setup ---------------------------------------------------------------
