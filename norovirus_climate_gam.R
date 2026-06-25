@@ -1,8 +1,8 @@
 # =============================================================================
 #  Climate sensitivity of norovirus notifications — Republic of Korea, 2005–2024
 #  Reproducible analysis code for the manuscript:
-#  "Climate Sensitivity of Norovirus in Korea, 2005–2024: Post-COVID-19
-#   Temperature Amplification and an Event-Based Heatwave Alert" (IJHEH).
+#  "Climate Sensitivity of Norovirus in Korea, 2005–2024: An Altered
+#   Post-COVID-19 Temperature Response and an Event-Based Heatwave Alert".
 #
 #  Author : Seongdae Kim      Advisor/corresponding : Byung Chul Chun
 #  License: MIT (code).  Data: see "DATA" below.
@@ -56,13 +56,9 @@ B_YEARPERM   <- 10000                                   # year-unit permutation
 
 ## ---- [1] Load + preprocess ---------------------------------------------------
 RAW_FILE <- "NORO_GAM_v21_Raw_260520_2356.xlsx"
-RAW_PATH <- NULL
-for (cand in c(RAW_FILE, file.path("미팅기록", RAW_FILE),
-               file.path(path.expand("~"),
-                 "Library/CloudStorage/GoogleDrive-wwwwrte@gmail.com",
-                 "내 드라이브/S.K/G.Downloads/미팅기록", RAW_FILE)))
-  if (file.exists(cand)) { RAW_PATH <- cand; break }
-stopifnot("Raw workbook not found — set RAW_PATH" = !is.null(RAW_PATH))
+# Place the workbook beside this script, edit RAW_PATH, or export NORO_RAW_PATH.
+RAW_PATH <- Sys.getenv("NORO_RAW_PATH", unset = RAW_FILE)
+stopifnot("Raw workbook not found — put it beside the script or set RAW_PATH/NORO_RAW_PATH" = file.exists(RAW_PATH))
 
 df <- as.data.frame(readxl::read_excel(RAW_PATH, sheet = "Weekly_FullData"))
 lagcols <- c(paste0("avg_temp_lag",0:8), paste0("humidity_lag",0:8),
